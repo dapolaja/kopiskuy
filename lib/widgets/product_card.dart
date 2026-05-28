@@ -3,11 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/product_model.dart';
 import '../core/services/api_service.dart';
+import '../core/services/currency_service.dart';
 
 class ProductCard extends StatefulWidget {
   final Product product;
 
-  const ProductCard({super.key, required this.product});
+  const ProductCard({
+    super.key,
+    required this.product,
+  });
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -17,6 +21,7 @@ class _ProductCardState extends State<ProductCard> {
   String role = "user";
 
   final Color primaryColor = const Color(0xFF6F4E37);
+  final Color accentColor = const Color(0xFFF5F1EE);
 
   @override
   void initState() {
@@ -26,6 +31,9 @@ class _ProductCardState extends State<ProductCard> {
 
   Future<void> getRole() async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
     setState(() {
       role = prefs.getString("role") ?? "user";
     });
@@ -33,221 +41,399 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 260, // ✅ FIX overflow (tinggi card tetap)
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: const [
-          BoxShadow(blurRadius: 6, color: Colors.black12, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        children: [
-          // 📷 IMAGE + ADMIN ACTION
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(15),
-                ),
-                child: widget.product.image != null
-                    ? Image.network(
-                        "http://192.168.1.16:3000/uploads/${widget.product.image}",
-                        height: 110,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const SizedBox(
-                            height: 110,
-                            child: Icon(Icons.image_not_supported),
-                          );
-                        },
-                      )
-                    : const SizedBox(height: 110, child: Icon(Icons.image)),
-              ),
-
-              // 🔧 ADMIN BUTTONS
-              if (role == "admin")
-                Positioned(
-                  right: 5,
-                  top: 5,
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () => showEditDialog(context),
-                        child: const CircleAvatar(
-                          radius: 13,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.edit, size: 15, color: Colors.blue),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      GestureDetector(
-                        onTap: () async {
-                          await ApiService().deleteProduct(widget.product.id);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Produk dihapus")),
-                          );
-                          setState(() {});
-                        },
-                        child: const CircleAvatar(
-                          radius: 13,
-                          backgroundColor: Colors.white,
+    return SizedBox(
+      height: 320,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                  child: widget.product.image != null
+                      ? Image.network(
+                          "http://192.168.18.96:3000/uploads/${widget.product.image}",
+                          height: 140,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 140,
+                              color: accentColor,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                color: primaryColor,
+                                size: 40,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          height: 140,
+                          color: accentColor,
+                          alignment: Alignment.center,
                           child: Icon(
-                            Icons.delete,
-                            size: 15,
-                            color: Colors.red,
+                            Icons.local_cafe,
+                            color: primaryColor,
+                            size: 42,
                           ),
                         ),
+                ),
+
+                // =========================
+                // STOCK BADGE
+                // =========================
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "Stock ${widget.product.stock}",
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
+                    ),
                   ),
                 ),
-            ],
-          ),
 
-          // 📦 CONTENT (pakai Expanded biar aman)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 🏷 NAMA
-                  Text(
-                    widget.product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                // =========================
+                // ADMIN BUTTONS
+                // =========================
+                if (role == "admin")
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Row(
+                      children: [
+                        buildAdminButton(
+                          icon: Icons.edit_outlined,
+                          color: Colors.blue,
+                          onTap: () {
+                            showEditDialog(context);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        buildAdminButton(
+                          icon: Icons.delete_outline,
+                          color: Colors.red,
+                          onTap: () async {
+                            await ApiService().deleteProduct(
+                              widget.product.id,
+                            );
+
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Produk berhasil dihapus",
+                                ),
+                              ),
+                            );
+
+                            setState(() {});
+                          },
+                        ),
+                      ],
                     ),
                   ),
+              ],
+            ),
 
-                  const SizedBox(height: 3),
-
-                  // 💰 HARGA
-                  Text(
-                    "Rp ${widget.product.price}",
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-
-                  const SizedBox(height: 3),
-
-                  // ⭐ RATING
-                  Row(
-                    children: const [
-                      Icon(Icons.star, size: 12, color: Colors.orange),
-                      Icon(Icons.star, size: 12, color: Colors.orange),
-                      Icon(Icons.star, size: 12, color: Colors.orange),
-                      Icon(Icons.star_half, size: 12, color: Colors.orange),
-                      Icon(Icons.star_border, size: 12, color: Colors.orange),
-                    ],
-                  ),
-
-                  const SizedBox(height: 3),
-
-                  // 📦 STOK
-                  Text(
-                    "Stok: ${widget.product.stock}",
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
-                  ),
-
-                  const Spacer(), 
-                  // 🛒 BUTTON USER
-                  if (role != "admin")
-                    SizedBox(
-                      width: double.infinity,
-                      height: 30,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await ApiService().addToCart(widget.product.id, 1);
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Berhasil ditambahkan ke cart"),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          "Tambah",
-                          style: TextStyle(fontSize: 11, color: Colors.white),
-                        ),
+            // =========================
+            // CONTENT
+            // =========================
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
                       ),
                     ),
-                ],
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      CurrencyService.instance.format(
+                        widget.product.price,
+                      ),
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            color: Colors.orange.shade700,
+                            size: 15,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            "Popular",
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const Spacer(),
+                    if (role != "admin")
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await ApiService().addToCart(
+                              widget.product.id,
+                              1,
+                            );
+
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: primaryColor,
+                                content: const Text(
+                                  "Produk ditambahkan ke cart",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: primaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.shopping_bag_outlined,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                "Tambah",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  // ✏️ EDIT DIALOG
-  void showEditDialog(BuildContext context) {
-    final name = TextEditingController(text: widget.product.name);
-    final price = TextEditingController(text: widget.product.price.toString());
-    final stock = TextEditingController(text: widget.product.stock.toString());
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Produk"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: name,
-              decoration: const InputDecoration(labelText: "Nama"),
-            ),
-            TextField(
-              controller: price,
-              decoration: const InputDecoration(labelText: "Harga"),
-            ),
-            TextField(
-              controller: stock,
-              decoration: const InputDecoration(labelText: "Stock"),
+  // =========================
+  // ADMIN BUTTON
+  // =========================
+  Widget buildAdminButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await ApiService().updateProduct(widget.product.id, {
-                "name": name.text,
-                "price": price.text,
-                "stock": stock.text,
-              });
-
-              Navigator.pop(context);
-
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text("Produk diupdate")));
-
-              setState(() {});
-            },
-            child: const Text("Simpan"),
-          ),
-        ],
+        child: Icon(
+          icon,
+          color: color,
+          size: 18,
+        ),
       ),
+    );
+  }
+
+  // =========================
+  // EDIT DIALOG
+  // =========================
+  void showEditDialog(BuildContext context) {
+    final name = TextEditingController(
+      text: widget.product.name,
+    );
+
+    final price = TextEditingController(
+      text: widget.product.price.toString(),
+    );
+
+    final stock = TextEditingController(
+      text: widget.product.stock.toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text("Edit Produk"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                decoration: InputDecoration(
+                  labelText: "Nama Produk",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: price,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Harga",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: stock,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Stock",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Batal"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () async {
+                await ApiService().updateProduct(
+                  widget.product.id,
+                  {
+                    "name": name.text,
+                    "price": price.text,
+                    "stock": stock.text,
+                  },
+                );
+
+                if (!context.mounted) return;
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Produk berhasil diupdate",
+                    ),
+                  ),
+                );
+
+                setState(() {});
+              },
+              child: const Text(
+                "Simpan",
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

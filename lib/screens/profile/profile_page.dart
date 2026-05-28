@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../auth/login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -11,10 +12,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String email = "";
-  final TextEditingController feedbackC = TextEditingController();
 
   final Color primaryColor = const Color(0xFF6F4E37);
-  final Color accentColor = const Color(0xFFD7CCC8);
+  final Color accentColor = const Color(0xFFF5F1EE);
 
   @override
   void initState() {
@@ -24,132 +24,292 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> getUser() async {
     final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
     setState(() {
       email = prefs.getString("email") ?? "user@email.com";
     });
   }
 
+  // =========================
+  // CUSTOM SNACKBAR
+  // =========================
+  void showCustomSnackbar({
+    required String title,
+    required String message,
+    required Color color,
+    IconData icon = Icons.info_outline,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        margin: const EdgeInsets.all(14),
+        content: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: Colors.white,
+                size: 26,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // =========================
+  // LOGOUT
+  // =========================
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    showCustomSnackbar(
+      title: "Logout Berhasil",
+      message: "Sampai jumpa kembali ☕",
+      color: Colors.green,
+      icon: Icons.check_circle_outline,
+    );
+
+    // delay agar snackbar sempat tampil
+    await Future.delayed(
+      const Duration(milliseconds: 1200),
+    );
 
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+      MaterialPageRoute(
+        builder: (_) => const LoginPage(),
+      ),
       (route) => false,
     );
   }
 
-  void submitFeedback() {
-    if (feedbackC.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Isi saran dulu ya")));
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Terima kasih atas sarannya 🙏")),
-    );
-
-    feedbackC.clear();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final String firstLetter = email.isNotEmpty ? email[0].toUpperCase() : "U";
+
     return Scaffold(
       backgroundColor: accentColor,
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        elevation: 0,
+        backgroundColor: accentColor,
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: primaryColor,
+        ),
+        title: Text(
+          "Profile",
+          style: TextStyle(
+            color: primaryColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 👤 PROFILE CARD
+            // =========================
+            // PROFILE CARD
+            // =========================
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                vertical: 28,
+                horizontal: 20,
+              ),
               decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [
+                    primaryColor,
+                    primaryColor.withOpacity(0.85),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.25),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 45,
-                    backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
+                  // AVATAR
+                  Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white24,
+                        width: 2,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        firstLetter,
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+
+                  const SizedBox(height: 18),
+
                   Text(
                     email,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      "Coffee Lover ☕",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 25),
+            const SizedBox(height: 24),
 
-            // 💬 FEEDBACK CARD
+            // =========================
+            // KESAN PESAN
+            // =========================
             Container(
-              padding: const EdgeInsets.all(15),
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: const [
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
                   BoxShadow(
-                    blurRadius: 6,
-                    color: Colors.black12,
-                    offset: Offset(0, 3),
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Saran & Kesan TPM",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  TextField(
-                    controller: feedbackC,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: "Tulis saran kamu...",
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.rate_review_rounded,
+                        color: primaryColor,
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: submitFeedback,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 10),
+                      Text(
+                        "Kesan & Pesan TPM",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
                         ),
                       ),
-                      child: const Text(
-                        "Kirim",
-                        style: TextStyle(color: Colors.white),
-                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    "Praktikum Teknologi Pemrograman Mobile memberikan pengalaman yang sangat menarik dalam mempelajari pengembangan aplikasi Flutter secara langsung. Saya mendapatkan banyak wawasan baru mengenai UI/UX mobile, integrasi API, state management, hingga implementasi fitur modern seperti AI recommendation, maps, notification, dan mini game.",
+                    style: TextStyle(
+                      height: 1.7,
+                      color: Colors.grey.shade700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.lightbulb_rounded,
+                          color: primaryColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            "Semoga praktikum selanjutnya semakin banyak studi kasus real-world dan implementasi teknologi modern agar mahasiswa lebih siap menghadapi kebutuhan industri mobile development.",
+                            style: TextStyle(
+                              color: Colors.grey.shade800,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -158,21 +318,32 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 30),
 
-            // 🚪 LOGOUT BUTTON
+            // =========================
+            // LOGOUT BUTTON
+            // =========================
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              height: 55,
+              child: ElevatedButton.icon(
                 onPressed: logout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                icon: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  "Logout",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: const Text(
-                  "Logout",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: Colors.red.shade400,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
               ),
             ),

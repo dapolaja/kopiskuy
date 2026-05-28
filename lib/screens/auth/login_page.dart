@@ -22,211 +22,462 @@ class _LoginPageState extends State<LoginPage> {
   final api = ApiService();
 
   bool isLoading = false;
+  bool obscurePassword = true;
 
   final Color primaryColor = const Color(0xFF6F4E37);
-  final Color accentColor = const Color(0xFFD7CCC8);
+  final Color accentColor = const Color(0xFFF5F1EE);
 
   @override
-  void initState() {
-    super.initState();
-    autoBiometric();
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
   }
 
-  Future<void> autoBiometric() async {
-    final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool("biometric_enabled");
-
-    if (enabled == true) {
-      final biometric = BiometricService();
-      bool success = await biometric.authenticate();
-
-      if (!mounted) return;
-
-      if (success) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-      }
-    }
+  // =========================
+  // CUSTOM SNACKBAR
+  // =========================
+  void showCustomSnackbar({
+    required String title,
+    required String message,
+    required Color color,
+    IconData icon = Icons.info_outline,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        margin: const EdgeInsets.all(14),
+        content: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: Colors.white,
+                size: 26,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
+  // =========================
+  // LOGIN
+  // =========================
   Future<void> login() async {
+    if (email.text.trim().isEmpty) {
+      showCustomSnackbar(
+        title: "Validation Error",
+        message: "Email tidak boleh kosong",
+        color: Colors.orange,
+        icon: Icons.warning_amber_rounded,
+      );
+      return;
+    }
+
+    if (password.text.trim().isEmpty) {
+      showCustomSnackbar(
+        title: "Validation Error",
+        message: "Password tidak boleh kosong",
+        color: Colors.orange,
+        icon: Icons.warning_amber_rounded,
+      );
+      return;
+    }
+
     setState(() => isLoading = true);
 
     try {
       final response = await api.dio.post(
         '/login',
-        data: {"email": email.text, "password": password.text},
+        data: {
+          "email": email.text.trim(),
+          "password": password.text.trim(),
+        },
       );
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
-      await prefs.setString("token", response.data["token"]);
-      await prefs.setInt("user_id", response.data["user"]["id"]);
-      await prefs.setBool("biometric_enabled", true);
-      await prefs.setString("email", response.data["user"]["email"]);
-      await prefs.setString("role", response.data["user"]["role"] ?? "user");
+      await prefs.setString(
+        "token",
+        response.data["token"],
+      );
+
+      await prefs.setInt(
+        "user_id",
+        response.data["user"]["id"],
+      );
+
+      await prefs.setString(
+        "email",
+        response.data["user"]["email"],
+      );
+
+      await prefs.setString(
+        "role",
+        response.data["user"]["role"] ?? "user",
+      );
+
+      // aktif setelah login manual
+      await prefs.setBool(
+        "biometric_enabled",
+        true,
+      );
+
+      showCustomSnackbar(
+        title: "Success",
+        message: "Login berhasil",
+        color: Colors.green,
+        icon: Icons.check_circle_outline,
+      );
 
       if (!mounted) return;
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(
+          builder: (_) => const HomePage(),
+        ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login gagal")),
+      showCustomSnackbar(
+        title: "Login Failed",
+        message: "Email atau password salah",
+        color: Colors.red,
+        icon: Icons.error_outline,
       );
     }
 
-    setState(() => isLoading = false);
+    if (mounted) {
+      setState(() => isLoading = false);
+    }
   }
 
+  // =========================
+  // BIOMETRIC LOGIN
+  // =========================
   Future<void> biometricLogin() async {
-    final biometric = BiometricService();
+    final prefs = await SharedPreferences.getInstance();
 
-    bool available = await biometric.isAvailable();
+    final enabled = prefs.getBool("biometric_enabled") ?? false;
 
-    if (!available) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Biometric tidak tersedia")),
+    if (!enabled) {
+      showCustomSnackbar(
+        title: "Fingerprint Belum Aktif",
+        message: "Login manual terlebih dahulu",
+        color: Colors.orange,
+        icon: Icons.warning_amber_rounded,
       );
       return;
     }
 
-    bool success = await biometric.authenticate();
+    final biometric = BiometricService();
+
+    final available = await biometric.isAvailable();
+
+    if (!available) {
+      showCustomSnackbar(
+        title: "Fingerprint Tidak Tersedia",
+        message: "Device tidak mendukung biometric",
+        color: Colors.red,
+        icon: Icons.error_outline,
+      );
+      return;
+    }
+
+    final success = await biometric.authenticate();
 
     if (!mounted) return;
 
     if (success) {
+      showCustomSnackbar(
+        title: "Login Berhasil",
+        message: "Berhasil login menggunakan fingerprint",
+        color: Colors.green,
+        icon: Icons.check_circle_outline,
+      );
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(
+          builder: (_) => const HomePage(),
+        ),
+      );
+    } else {
+      showCustomSnackbar(
+        title: "Autentikasi Gagal",
+        message: "Fingerprint tidak dikenali",
+        color: Colors.red,
+        icon: Icons.error_outline,
       );
     }
   }
 
+  // =========================
+  // UI
+  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: accentColor,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(25),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 18,
+          ),
           child: Column(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 10),
 
-              // 🎬 LOTTIE
-              Lottie.asset('assets/lottie/coffee1.json', height: 200),
+              // =========================
+              // LOTTIE
+              // =========================
+              Lottie.asset(
+                'assets/lottie/coffee1.json',
+                height: 220,
+              ),
 
               const SizedBox(height: 10),
 
               Text(
                 "KOPISKUY",
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
                   color: primaryColor,
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 8),
 
-              // 📧 EMAIL
-              TextField(
-                controller: email,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  labelText: "Email",
-                  prefixIcon: Icon(Icons.email, color: primaryColor),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
+              Text(
+                "Nikmati kopi favoritmu kapan saja",
+                style: TextStyle(
+                  color: Colors.brown.shade400,
+                  fontSize: 14,
                 ),
               ),
 
-              const SizedBox(height: 15),
+              const SizedBox(height: 35),
 
-              // 🔒 PASSWORD
-              TextField(
-                controller: password,
-                obscureText: true,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  labelText: "Password",
-                  prefixIcon: Icon(Icons.lock, color: primaryColor),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // 🔘 LOGIN BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+              // =========================
+              // LOGIN CARD
+              // =========================
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
-                  ),
-                  child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          "Login",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // EMAIL
+                    TextField(
+                      controller: email,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        hintText: "Email",
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: primaryColor,
+                        ),
+                        filled: true,
+                        fillColor: accentColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // PASSWORD
+                    TextField(
+                      controller: password,
+                      obscureText: obscurePassword,
+                      decoration: InputDecoration(
+                        hintText: "Password",
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: primaryColor,
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              obscurePassword = !obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: primaryColor,
                           ),
                         ),
+                        filled: true,
+                        fillColor: accentColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // LOGIN BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : login,
+                        style: ElevatedButton.styleFrom(
+                          elevation: 0,
+                          backgroundColor: primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              18,
+                            ),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // FINGERPRINT BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton.icon(
+                        onPressed: biometricLogin,
+                        icon: Icon(
+                          Icons.fingerprint,
+                          color: primaryColor,
+                        ),
+                        label: Text(
+                          "Login dengan Fingerprint",
+                          style: TextStyle(
+                            color: primaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: primaryColor.withOpacity(
+                              0.3,
+                            ),
+                          ),
+                          backgroundColor: primaryColor.withOpacity(
+                            0.03,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 18),
 
-              // 🔐 BIOMETRIC
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: biometricLogin,
-                  icon: const Icon(Icons.fingerprint),
-                  label: const Text("Login dengan Fingerprint"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryColor,
-                    side: BorderSide(color: primaryColor),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+              // REGISTER
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Belum punya akun?",
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterPage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      "Register",
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // 📝 REGISTER
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const RegisterPage(),
-                    ),
-                  );
-                },
-                child: Text(
-                  "Belum punya akun? Register",
-                  style: TextStyle(color: primaryColor),
-                ),
+                ],
               ),
             ],
           ),

@@ -1,28 +1,54 @@
 import 'package:local_auth/local_auth.dart';
 
 class BiometricService {
-  final LocalAuthentication auth = LocalAuthentication();
+  final LocalAuthentication auth =
+      LocalAuthentication();
 
-  // cek device support
+  // =========================
+  // CHECK AVAILABLE
+  // =========================
   Future<bool> isAvailable() async {
-    bool canCheck = await auth.canCheckBiometrics;
-    bool isSupported = await auth.isDeviceSupported();
-    return canCheck && isSupported;
+    try {
+      final bool canCheck =
+          await auth.canCheckBiometrics;
+
+      final bool isSupported =
+          await auth.isDeviceSupported();
+
+      return canCheck && isSupported;
+    } catch (e) {
+      return false;
+    }
   }
 
-  // authenticate
+  // =========================
+  // AUTHENTICATE
+  // =========================
   Future<bool> authenticate() async {
     try {
-      return await auth.authenticate(
-        localizedReason: 'Scan fingerprint untuk login',
+      final bool isAuthenticated =
+          await auth.authenticate(
+        localizedReason:
+            'Scan fingerprint untuk login',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,
+          useErrorDialogs: true,
         ),
       );
+
+      return isAuthenticated;
     } catch (e) {
       print("Biometric error: $e");
       return false;
     }
+  }
+
+  // =========================
+  // GET BIOMETRICS
+  // =========================
+  Future<List<BiometricType>>
+  getAvailableBiometrics() async {
+    return await auth.getAvailableBiometrics();
   }
 }
