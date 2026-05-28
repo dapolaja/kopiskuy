@@ -3,28 +3,72 @@ const db = require('../config/db');
 exports.addCart = (req, res) => {
     const user_id = req.user.id;
     const { product_id, qty } = req.body;
+
+    // cek apakah produk sudah ada di cart
     db.query(
-        "INSERT INTO carts (user_id,product_id,qty) VALUES (?,?,?)",
-        [user_id, product_id, qty],
+        "SELECT * FROM carts WHERE user_id=? AND product_id=?",
+        [user_id, product_id],
         (err, result) => {
+
             if (err) return res.status(500).json(err);
 
-            res.json({
-                message: "Masuk keranjang"
-            });
+            // kalau sudah ada -> update qty
+            if (result.length > 0) {
+
+                const currentQty = result[0].qty;
+                const newQty = currentQty + qty;
+
+                db.query(
+                    "UPDATE carts SET qty=? WHERE id=?",
+                    [newQty, result[0].id],
+                    (err2) => {
+
+                        if (err2) return res.status(500).json(err2);
+
+                        res.json({
+                            message: "Qty cart diperbarui"
+                        });
+                    }
+                );
+
+            } else {
+
+                // kalau belum ada -> insert baru
+                db.query(
+                    "INSERT INTO carts (user_id,product_id,qty) VALUES (?,?,?)",
+                    [user_id, product_id, qty],
+                    (err3) => {
+
+                        if (err3) return res.status(500).json(err3);
+
+                        res.json({
+                            message: "Produk masuk keranjang"
+                        });
+                    }
+                );
+
+            }
         }
     );
 };
 
 exports.getCart = (req, res) => {
     const user_id = req.params.user_id;
+
     db.query(`
-        SELECT carts.id, products.name, products.price, carts.qty
+        SELECT 
+            carts.id,
+            carts.product_id,
+            products.name,
+            products.price,
+            carts.qty
         FROM carts
         JOIN products ON carts.product_id = products.id
         WHERE carts.user_id=?
     `, [user_id], (err, result) => {
+
         if (err) return res.status(500).json(err);
+
         res.json(result);
     });
 };
@@ -45,6 +89,7 @@ exports.deleteCart = (req, res) => {
 
 exports.checkout = (req, res) => {
     const user_id = req.user.id;
+    const { voucher } = req.body;
 
     db.query(`
         SELECT carts.*, products.price, products.stock
@@ -58,7 +103,9 @@ exports.checkout = (req, res) => {
                 message: "Cart kosong"
             });
         }
+
         let total = 0;
+
         for (let item of carts) {
 
             if (item.qty > item.stock) {
@@ -66,18 +113,40 @@ exports.checkout = (req, res) => {
                     message: `${item.product_id} stock tidak cukup`
                 });
             }
+
             total += item.price * item.qty;
         }
+
+        let discount = 0;
+
+        if (voucher === "Diskon 5%") {
+            discount = total * 0.05;
+        }
+
+        if (voucher === "Diskon 10%") {
+            discount = total * 0.10;
+        }
+
+        if (voucher === "Diskon 15 Ribu") {
+            discount = 15000;
+        }
+
+        const finalTotal = Math.max(total - discount, 0);
+
         db.query(
             "INSERT INTO orders (user_id,total) VALUES (?,?)",
-            [user_id, total],
+            [user_id, finalTotal],
             (err, result) => {
+
                 const orderId = result.insertId;
+
                 carts.forEach(item => {
+
                     db.query(
                         "INSERT INTO order_items (order_id,product_id,qty,price) VALUES (?,?,?,?)",
                         [orderId, item.product_id, item.qty, item.price]
                     );
+
                     db.query(
                         "UPDATE products SET stock = stock - ? WHERE id=?",
                         [item.qty, item.product_id]
@@ -92,7 +161,10 @@ exports.checkout = (req, res) => {
 
                 res.json({
                     message: "Checkout berhasil",
-                    total: total
+                    total_awal: total,
+                    discount: discount,
+                    total_akhir: finalTotal,
+                    voucher: voucher
                 });
 
             }
@@ -140,16 +212,38 @@ exports.updateStatus = (req, res) => {
 };
 
 exports.updateQty = (req, res) => {
+
     const { id } = req.params;
     const { qty } = req.body;
+
+    // kalau qty <= 0 -> hapus cart
+    if (qty <= 0) {
+
+        db.query(
+            "DELETE FROM carts WHERE id=?",
+            [id],
+            (err) => {
+
+                if (err) return res.status(500).json(err);
+
+                res.json({
+                    message: "Produk dihapus dari cart"
+                });
+            }
+        );
+
+        return;
+    }
+
     db.query(
         "UPDATE carts SET qty=? WHERE id=?",
         [qty, id],
-        (err, result) => {
+        (err) => {
+
             if (err) return res.status(500).json(err);
 
             res.json({
-                message: "Qty diupdate"
+                message: "Qty berhasil diupdate"
             });
         }
     );

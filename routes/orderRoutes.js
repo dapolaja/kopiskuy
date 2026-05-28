@@ -3,11 +3,12 @@ const router = express.Router();
 
 const orderController = require('../controllers/orderController');
 const auth = require('../middleware/authMiddleware');
+const verifyToken = require('../middleware/authMiddleware');
 
 router.post('/cart', auth, orderController.addCart); 
 router.get('/cart/:user_id', auth, orderController.getCart);
 router.delete('/cart/:id', auth, orderController.deleteCart);
-router.put('/cart/:id', auth, orderController.updateQty);
+router.put('/cart/:id', verifyToken, orderController.updateQty);
 
 router.post('/order', auth, orderController.checkout);
 router.get('/history/:user_id', auth, orderController.history);

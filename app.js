@@ -16,7 +16,7 @@ app.use('/api', authRoutes);
 app.use('/api', orderRoutes);
 
 // Route utama
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
     res.json({
         message: 'REST API Kopiskuy aktif'
     });
