@@ -2,12 +2,12 @@ const db = require('../config/db');
 
 exports.addCart = (req, res) => {
     const user_id = req.user.id;
-    const { product_id, qty } = req.body;
+    const { product_id, qty, size, temp } = req.body;
 
-    // cek apakah produk sudah ada di cart
+    // cek apakah produk dengan size dan temp yang sama sudah ada di cart
     db.query(
-        "SELECT * FROM carts WHERE user_id=? AND product_id=?",
-        [user_id, product_id],
+        "SELECT * FROM carts WHERE user_id=? AND product_id=? AND size=? AND temp=?",
+        [user_id, product_id, size || 'Medium', temp || 'Ice'],
         (err, result) => {
 
             if (err) return res.status(500).json(err);
@@ -35,8 +35,8 @@ exports.addCart = (req, res) => {
 
                 // kalau belum ada -> insert baru
                 db.query(
-                    "INSERT INTO carts (user_id,product_id,qty) VALUES (?,?,?)",
-                    [user_id, product_id, qty],
+                    "INSERT INTO carts (user_id, product_id, qty, size, temp) VALUES (?, ?, ?, ?, ?)",
+                    [user_id, product_id, qty, size || 'Medium', temp || 'Ice'],
                     (err3) => {
 
                         if (err3) return res.status(500).json(err3);
@@ -61,7 +61,9 @@ exports.getCart = (req, res) => {
             carts.product_id,
             products.name,
             products.price,
-            carts.qty
+            carts.qty,
+            carts.size,
+            carts.temp
         FROM carts
         JOIN products ON carts.product_id = products.id
         WHERE carts.user_id=?
@@ -126,11 +128,6 @@ exports.checkout = (req, res) => {
         if (voucher === "Diskon 10%") {
             discount = total * 0.10;
         }
-
-        if (voucher === "Diskon 15 Ribu") {
-            discount = 15000;
-        }
-
         const finalTotal = Math.max(total - discount, 0);
 
         db.query(
@@ -143,8 +140,8 @@ exports.checkout = (req, res) => {
                 carts.forEach(item => {
 
                     db.query(
-                        "INSERT INTO order_items (order_id,product_id,qty,price) VALUES (?,?,?,?)",
-                        [orderId, item.product_id, item.qty, item.price]
+                        "INSERT INTO order_items (order_id,product_id,qty,price,size,temp) VALUES (?,?,?,?,?,?)",
+                        [orderId, item.product_id, item.qty, item.price, item.size, item.temp]
                     );
 
                     db.query(
@@ -193,6 +190,19 @@ exports.detailOrder = (req, res) => {
         JOIN products ON order_items.product_id = products.id
         WHERE order_id=?
     `, [id], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json(result);
+    });
+};
+
+exports.getAllOrders = (req, res) => {
+    db.query(`
+        SELECT orders.*, users.name as user_name
+        FROM orders
+        JOIN users ON orders.user_id = users.id
+        ORDER BY orders.created_at DESC
+    `, (err, result) => {
+        if (err) return res.status(500).json(err);
         res.json(result);
     });
 };
@@ -200,10 +210,17 @@ exports.detailOrder = (req, res) => {
 exports.updateStatus = (req, res) => {
     const id = req.params.id;
     const { status } = req.body;
+
+    const validStatuses = ['pending', 'success', 'cancel'];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Status tidak valid" });
+    }
+
     db.query(
         "UPDATE orders SET status=? WHERE id=?",
         [status, id],
         (err, result) => {
+            if (err) return res.status(500).json(err);
             res.json({
                 message: "Status diupdate"
             });
