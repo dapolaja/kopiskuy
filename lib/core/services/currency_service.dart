@@ -2,18 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class CurrencyService extends ChangeNotifier {
-  // =========================
-  // SINGLETON
-  // =========================
   static final CurrencyService instance = CurrencyService._internal();
 
   CurrencyService._internal();
-
-  // =========================
-  // STATE
-  // =========================
   String selectedCurrency = "IDR";
 
   final Map<String, double> rates = {
@@ -23,20 +17,12 @@ class CurrencyService extends ChangeNotifier {
     "EUR": 0.000057,
   };
 
-  // =========================
-  // INIT
-  // =========================
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
-
     selectedCurrency = prefs.getString("currency") ?? "IDR";
-
     await fetchRates();
   }
 
-  // =========================
-  // FETCH LIVE RATE
-  // =========================
   Future<void> fetchRates() async {
     try {
       final response = await http.get(
@@ -54,9 +40,6 @@ class CurrencyService extends ChangeNotifier {
     } catch (_) {}
   }
 
-  // =========================
-  // CHANGE CURRENCY
-  // =========================
   Future<void> changeCurrency(String currency) async {
     selectedCurrency = currency;
 
@@ -70,16 +53,10 @@ class CurrencyService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // =========================
-  // CONVERT
-  // =========================
   double convert(num idr) {
     return idr * (rates[selectedCurrency] ?? 1);
   }
 
-  // =========================
-  // FORMAT
-  // =========================
   String format(num idr) {
     final value = convert(idr);
 
@@ -94,7 +71,11 @@ class CurrencyService extends ChangeNotifier {
         return "€${value.toStringAsFixed(2)}";
 
       default:
-        return "Rp ${idr.toStringAsFixed(0)}";
+        return NumberFormat.currency(
+          locale: 'id_ID',
+          symbol: 'Rp. ',
+          decimalDigits: 0,
+        ).format(idr);
     }
   }
 }

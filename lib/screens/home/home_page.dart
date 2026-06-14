@@ -20,6 +20,7 @@ import '../profile/profile_page.dart';
 import '../converter/converter_page.dart';
 import '../../widgets/add_product_page.dart';
 import '../../core/services/currency_service.dart';
+import '../order/admin_order_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,14 +31,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final api = ApiService();
-
   StreamSubscription<ServiceStatus>? serviceStatusStream;
-
   bool isGpsDialogOpen = false;
-
   List<Product> products = [];
   List<Product> filteredProducts = [];
-
   bool isLoading = true;
   Map<String, dynamic>? recommendedCoffee;
 
@@ -51,10 +48,6 @@ class _HomePageState extends State<HomePage> {
   final Color accentColor = const Color(0xFFF5F1EE);
 
   int currentBanner = 0;
-
-  // =========================
-  // 🌍 TIME + GPS
-  // =========================
   Timer? timer;
 
   DateTime currentTime = DateTime.now();
@@ -114,9 +107,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // =========================
-  // 🌍 INIT GPS TIME
-  // =========================
   Future<void> initializeTime() async {
     await detectTimezoneFromGPS();
     await fetchTime();
@@ -128,11 +118,8 @@ class _HomePageState extends State<HomePage> {
         // GPS DIMATIKAN
         if (status == ServiceStatus.disabled) {
           if (isGpsDialogOpen) return;
-
           isGpsDialogOpen = true;
-
           if (!mounted) return;
-
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -184,33 +171,21 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // =========================
-  // 📍 DETECT TIMEZONE FROM GPS
-  // =========================
   Future<void> detectTimezoneFromGPS() async {
     try {
-      // =========================
-      // CEK GPS AKTIF
-      // =========================
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
       // Jika GPS belum aktif
       if (!serviceEnabled) {
         await Geolocator.openLocationSettings();
-
         return;
       }
-
       LocationPermission permission = await Geolocator.checkPermission();
-
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
       if (permission == LocationPermission.denied) {
         return;
       }
-
       if (permission == LocationPermission.deniedForever) {
         await Geolocator.openAppSettings();
         return;
@@ -239,9 +214,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // =========================
-  // 🌍 FETCH TIME FROM API
-  // =========================
   Future<void> fetchTime() async {
     try {
       final timezone = timezoneMap[selectedTimezone]!;
@@ -272,9 +244,7 @@ class _HomePageState extends State<HomePage> {
 
   void convertTimezone(String newZone) {
     final currentOffset = timezoneOffset[selectedTimezone]!;
-
     final newOffset = timezoneOffset[newZone]!;
-
     final difference = newOffset - currentOffset;
 
     setState(() {
@@ -403,9 +373,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             ),
-
             const SizedBox(height: 10),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: banners.asMap().entries.map(
@@ -431,11 +399,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ).toList(),
             ),
-
             const SizedBox(height: 20),
-            // =========================
-// ☕ AI RECOMMENDATION CARD
-// =========================
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 15),
               padding: const EdgeInsets.all(18),
@@ -459,9 +423,6 @@ class _HomePageState extends State<HomePage> {
               ),
               child: Row(
                 children: [
-                  // =========================
-                  // ICON
-                  // =========================
                   Container(
                     width: 65,
                     height: 65,
@@ -475,12 +436,7 @@ class _HomePageState extends State<HomePage> {
                       size: 34,
                     ),
                   ),
-
                   const SizedBox(width: 16),
-
-                  // =========================
-                  // TEXT CONTENT
-                  // =========================
                   Expanded(
                     child: recommendedCoffee == null
                         ? const Column(
@@ -554,24 +510,16 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                   ),
-
                   const SizedBox(width: 10),
-
-                  // =========================
-                  // BUTTON
-                  // =========================
                   InkWell(
                     borderRadius: BorderRadius.circular(18),
                     onTap: () async {
                       if (recommendedCoffee == null) return;
-
                       await api.addToCart(
                         recommendedCoffee!["id"],
                         1,
                       );
-
                       if (!mounted) return;
-
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -613,10 +561,6 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 20),
-
-            // =========================
-            // 🔍 SEARCH
-            // =========================
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 15,
@@ -647,10 +591,6 @@ class _HomePageState extends State<HomePage> {
             ),
 
             const SizedBox(height: 18),
-
-            // =========================
-            // 🧋 CATEGORY
-            // =========================
             SizedBox(
               height: 42,
               child: ListView.builder(
@@ -740,7 +680,7 @@ class _HomePageState extends State<HomePage> {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
 
-                // 🔥 FIX OVERFLOW
+                // FIX OVERFLOW
                 childAspectRatio: 0.58,
 
                 crossAxisSpacing: 14,
@@ -857,13 +797,17 @@ class _HomePageState extends State<HomePage> {
               Icons.shopping_cart,
               color: primaryColor,
             ),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => const CartPage(),
                 ),
               );
+
+              if (result == true) {
+                fetchProducts();
+              }
             },
           ),
           IconButton(
@@ -880,6 +824,21 @@ class _HomePageState extends State<HomePage> {
               );
             },
           ),
+          if (role == "admin")
+            IconButton(
+              icon: Icon(
+                Icons.assignment_outlined,
+                color: primaryColor,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminOrderPage(),
+                  ),
+                );
+              },
+            ),
           if (role == "admin")
             IconButton(
               icon: Icon(

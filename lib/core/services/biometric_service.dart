@@ -4,9 +4,6 @@ class BiometricService {
   final LocalAuthentication auth =
       LocalAuthentication();
 
-  // =========================
-  // CHECK AVAILABLE
-  // =========================
   Future<bool> isAvailable() async {
     try {
       final bool canCheck =
@@ -21,9 +18,6 @@ class BiometricService {
     }
   }
 
-  // =========================
-  // AUTHENTICATE
-  // =========================
   Future<bool> authenticate() async {
     try {
       final bool isAuthenticated =
@@ -44,9 +38,6 @@ class BiometricService {
     }
   }
 
-  // =========================
-  // GET BIOMETRICS
-  // =========================
   Future<List<BiometricType>>
   getAvailableBiometrics() async {
     return await auth.getAvailableBiometrics();

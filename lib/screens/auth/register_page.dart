@@ -31,9 +31,6 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  // =========================
-  // CUSTOM SNACKBAR
-  // =========================
   void showCustomSnackbar({
     required String title,
     required String message,
@@ -99,9 +96,6 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // =========================
-  // REGISTER
-  // =========================
   Future<void> register() async {
     if (name.text.trim().isEmpty) {
       showCustomSnackbar(
@@ -176,9 +170,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  // =========================
-  // UI
-  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,10 +183,6 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             children: [
               const SizedBox(height: 10),
-
-              // =========================
-              // LOTTIE
-              // =========================
               Lottie.asset(
                 'assets/lottie/coffee1.json',
                 height: 220,
@@ -224,10 +211,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
 
               const SizedBox(height: 35),
-
-              // =========================
-              // REGISTER CARD
-              // =========================
               Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(

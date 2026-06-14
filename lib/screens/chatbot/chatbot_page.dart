@@ -163,7 +163,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
         ),
         headers: {
           "Authorization":
-              "API_KEY",
+              "Bearer",
           "Content-Type": "application/json",
         },
         body: jsonEncode({
@@ -212,9 +212,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
     }
   }
 
-  // =========================
-  // AUTO SCROLL
-  // =========================
   void scrollToBottom() {
     Future.delayed(
       const Duration(milliseconds: 300),
@@ -230,9 +227,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
     );
   }
 
-  // =========================
-  // MESSAGE BUBBLE
-  // =========================
   Widget buildMessageBubble(
     Map<String, dynamic> msg,
   ) {
@@ -323,9 +317,6 @@ class _ChatbotPageState extends State<ChatbotPage> {
     );
   }
 
-  // =========================
-  // UI
-  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -465,12 +456,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
               ),
             ),
           Container(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              14,
-              16,
-              22,
-            ),
+            padding: const EdgeInsets.fromLTRB(16,14,16,22,),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: const BorderRadius.vertical(

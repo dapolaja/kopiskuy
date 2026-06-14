@@ -5,15 +5,13 @@ import '../../models/product_model.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
-
   factory ApiService() => _instance;
-
   late Dio dio;
 
   ApiService._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: "http://192.168.18.96:3000/api",
+        baseUrl: "http://192.168.100.84:3000/api",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
@@ -24,9 +22,7 @@ class ApiService {
 
   Future<Options> authOptions() async {
     final prefs = await SharedPreferences.getInstance();
-
     final token = prefs.getString("token");
-
     print("TOKEN => $token");
 
     if (token == null || token.isEmpty) {
@@ -41,9 +37,6 @@ class ApiService {
     );
   }
 
-  // =========================
-  // PRODUCTS
-  // =========================
   Future<List<Product>> getProducts() async {
     final response = await dio.get(
       '/products',
@@ -54,18 +47,19 @@ class ApiService {
     return data.map((e) => Product.fromJson(e)).toList();
   }
 
-  // =========================
-  // CART
-  // =========================
   Future<void> addToCart(
     int productId,
-    int qty,
-  ) async {
+    int qty, {
+    String? size,
+    String? temp,
+  }) async {
     final response = await dio.post(
       '/cart',
       data: {
         "product_id": productId,
         "qty": qty,
+        "size": size,
+        "temp": temp,
       },
       options: await authOptions(),
     );
@@ -101,9 +95,13 @@ class ApiService {
     );
   }
 
-  // =========================
-  // ORDER
-  // =========================
+  Future<void> removeFromCart(int cartId) async {
+    await dio.delete(
+      '/cart/$cartId',
+      options: await authOptions(),
+    );
+  }
+
   Future<Map<String, dynamic>> checkout({
     String? voucherName,
   }) async {
@@ -140,9 +138,28 @@ class ApiService {
     return response.data;
   }
 
-  // =========================
-  // RECOMMENDATION
-  // =========================
+  Future<List> getAllOrders() async {
+    final response = await dio.get(
+      '/all-orders',
+      options: await authOptions(),
+    );
+
+    return response.data;
+  }
+
+  Future<void> updateOrderStatus(
+    int orderId,
+    String status,
+  ) async {
+    await dio.put(
+      '/order/status/$orderId',
+      data: {
+        "status": status,
+      },
+      options: await authOptions(),
+    );
+  }
+
   Future<List> getRecommendation() async {
     final response = await dio.get(
       '/recommendation',
@@ -152,9 +169,6 @@ class ApiService {
     return response.data;
   }
 
-  // =========================
-  // PRODUCT ADMIN
-  // =========================
   Future<void> updateProduct(
     int id,
     Map<String, dynamic> data,
@@ -175,9 +189,6 @@ class ApiService {
     );
   }
 
-  // =========================
-  // CURRENCY
-  // =========================
   Future<Map<String, dynamic>> getRates() async {
     final response = await dio.get(
       'https://api.exchangerate-api.com/v4/latest/IDR',
@@ -198,11 +209,8 @@ class ApiService {
     double idr,
   ) async {
     final rates = await getRates();
-
     final usd = idr * rates["rates"]["USD"];
-
     final myr = idr * rates["rates"]["MYR"];
-
     final eur = idr * rates["rates"]["EUR"];
 
     return {

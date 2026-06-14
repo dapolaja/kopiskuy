@@ -34,9 +34,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // =========================
-  // CUSTOM SNACKBAR
-  // =========================
   void showCustomSnackbar({
     required String title,
     required String message,
@@ -102,9 +99,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // =========================
-  // LOGIN
-  // =========================
   Future<void> login() async {
     if (email.text.trim().isEmpty) {
       showCustomSnackbar(
@@ -194,9 +188,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // =========================
-  // BIOMETRIC LOGIN
-  // =========================
   Future<void> biometricLogin() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -254,9 +245,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // =========================
-  // UI
-  // =========================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -270,10 +258,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             children: [
               const SizedBox(height: 10),
-
-              // =========================
-              // LOTTIE
-              // =========================
               Lottie.asset(
                 'assets/lottie/coffee1.json',
                 height: 220,
@@ -302,10 +286,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(height: 35),
-
-              // =========================
-              // LOGIN CARD
-              // =========================
               Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(

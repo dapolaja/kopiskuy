@@ -67,9 +67,7 @@ class _MiniGamePageState extends State<MiniGamePage>
   Future<void> winGame() async {
     _subscription?.cancel();
     isPlaying = false;
-
     final reward = await VoucherService.generateVoucher();
-
     result = reward;
 
     setState(() {});
@@ -100,9 +98,6 @@ class _MiniGamePageState extends State<MiniGamePage>
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // =========================
-              // 🔥 HEADER
-              // =========================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -143,12 +138,7 @@ class _MiniGamePageState extends State<MiniGamePage>
                   ),
                 ],
               ),
-
               const SizedBox(height: 30),
-
-              // =========================
-              // ☕ MAIN CARD
-              // =========================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(25),
@@ -190,9 +180,7 @@ class _MiniGamePageState extends State<MiniGamePage>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 15),
-
                     const Text(
                       "Shake Your Coffee!",
                       style: TextStyle(
@@ -201,9 +189,7 @@ class _MiniGamePageState extends State<MiniGamePage>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     const Text(
                       "Goyangkan HP untuk mendapatkan voucher kopi premium ☕",
                       textAlign: TextAlign.center,
@@ -212,12 +198,7 @@ class _MiniGamePageState extends State<MiniGamePage>
                         height: 1.5,
                       ),
                     ),
-
                     const SizedBox(height: 30),
-
-                    // =========================
-                    // 🔢 COUNTER
-                    // =========================
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 30,
@@ -252,10 +233,6 @@ class _MiniGamePageState extends State<MiniGamePage>
                     ),
 
                     const SizedBox(height: 25),
-
-                    // =========================
-                    // 📊 PROGRESS
-                    // =========================
                     Column(
                       children: [
                         Row(
@@ -290,12 +267,7 @@ class _MiniGamePageState extends State<MiniGamePage>
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 35),
-
-                    // =========================
-                    // 🎮 BUTTON
-                    // =========================
                     SizedBox(
                       width: double.infinity,
                       height: 58,
@@ -336,10 +308,6 @@ class _MiniGamePageState extends State<MiniGamePage>
               ),
 
               const SizedBox(height: 25),
-
-              // =========================
-              // 🎁 RESULT CARD
-              // =========================
               if (result.isNotEmpty)
                 Container(
                   width: double.infinity,

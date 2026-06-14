@@ -236,6 +236,20 @@ class _DetailOrderPageState extends State<DetailOrderPage> {
                                           fontSize: 15,
                                         ),
                                       ),
+                                      const SizedBox(height: 4),
+                                      if (item["size"] != null || item["temp"] != null)
+                                        Row(
+                                          children: [
+                                            Text(
+                                              "${item["size"] ?? ""} | ${item["temp"] ?? ""}",
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                                fontStyle: FontStyle.italic,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       const SizedBox(height: 6),
                                       Container(
                                         padding: const EdgeInsets.symmetric(

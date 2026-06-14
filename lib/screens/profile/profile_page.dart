@@ -32,9 +32,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  // =========================
-  // CUSTOM SNACKBAR
-  // =========================
   void showCustomSnackbar({
     required String title,
     required String message,
@@ -100,9 +97,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // =========================
-  // LOGOUT
-  // =========================
   Future<void> logout() async {
     showCustomSnackbar(
       title: "Logout Berhasil",
@@ -152,9 +146,6 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // =========================
-            // PROFILE CARD
-            // =========================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(
@@ -238,10 +229,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 24),
-
-            // =========================
-            // KESAN PESAN
-            // =========================
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -278,7 +265,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    "Praktikum Teknologi Pemrograman Mobile memberikan pengalaman yang sangat menarik dalam mempelajari pengembangan aplikasi Flutter secara langsung. Saya mendapatkan banyak wawasan baru mengenai UI/UX mobile, integrasi API, state management, hingga implementasi fitur modern seperti AI recommendation, maps, notification, dan mini game.",
+                    "Mata Kuliah Teknologi Dan Pemrograman Mobile memberikan pengalaman yang sangat menarik dalam mempelajari pengembangan aplikasi mobile secara langsung. Saya mendapatkan banyak wawasan baru mengenai UI/UX mobile, integrasi API, state management, hingga implementasi fitur modern seperti AI recommendation, notification, dan mini game.",
                     style: TextStyle(
                       height: 1.7,
                       color: Colors.grey.shade700,
@@ -302,7 +289,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            "Semoga praktikum selanjutnya semakin banyak studi kasus real-world dan implementasi teknologi modern agar mahasiswa lebih siap menghadapi kebutuhan industri mobile development.",
+                            "Semoga selanjutnya semakin banyak studi kasus dan implementasi teknologi modern agar mahasiswa lebih siap menghadapi kebutuhan industri mobile development. Untuk tahun ini cukup mantap tugas akhirnya",
                             style: TextStyle(
                               color: Colors.grey.shade800,
                               height: 1.5,
@@ -317,10 +304,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 30),
-
-            // =========================
-            // LOGOUT BUTTON
-            // =========================
             SizedBox(
               width: double.infinity,
               height: 55,

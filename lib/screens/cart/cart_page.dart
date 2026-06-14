@@ -42,8 +42,8 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-  Future<void> getCart() async {
-    setState(() => isLoading = true);
+  Future<void> getCart({bool silent = false}) async {
+    if (!silent) setState(() => isLoading = true);
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -101,10 +101,6 @@ class _CartPageState extends State<CartPage> {
       return (total * 0.10).toInt();
     }
 
-    if (selectedVoucher == "Gratis Kopi") {
-      return 15000;
-    }
-
     return 0;
   }
 
@@ -117,14 +113,46 @@ class _CartPageState extends State<CartPage> {
   }
 
   Future<void> updateQty(int cartId, int qty) async {
+    if (qty < 1) return; // Prevent negative or zero qty
+
     try {
+      // Update local state first for instant feedback (Optimistic Update)
+      setState(() {
+        final index = cart.indexWhere((element) => element["id"] == cartId);
+        if (index != -1) {
+          cart[index]["qty"] = qty;
+        }
+      });
+
       await api.updateCartQty(cartId, qty);
 
-      getCart();
+      // Refresh data silently in background to sync with server
+      getCart(silent: true);
     } catch (e) {
+      // Revert if failed (simple way: just call getCart normally)
+      getCart();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Gagal update quantity"),
+        ),
+      );
+    }
+  }
+
+  Future<void> removeItem(int cartId) async {
+    try {
+      // Optimistic delete
+      setState(() {
+        cart.removeWhere((element) => element["id"] == cartId);
+      });
+
+      await api.removeFromCart(cartId);
+      getCart(silent: true);
+    } catch (e) {
+      getCart();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Gagal menghapus item"),
         ),
       );
     }
@@ -163,6 +191,13 @@ class _CartPageState extends State<CartPage> {
 
       getCart();
       getVouchers();
+
+      // Return true to signal success to previous page
+      if (mounted) {
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted) Navigator.pop(context, true);
+        });
+      }
     } catch (e) {
       if (!mounted) return;
 
@@ -254,9 +289,6 @@ class _CartPageState extends State<CartPage> {
                   )
                 : Column(
                     children: [
-                      // =========================
-                      // CART LIST
-                      // =========================
                       Expanded(
                         child: ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -306,6 +338,14 @@ class _CartPageState extends State<CartPage> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                        if (item["size"] != null || item["temp"] != null)
+                                          Text(
+                                            "${item["size"] ?? ""} | ${item["temp"] ?? ""}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
                                         const SizedBox(height: 10),
                                         Row(
                                           children: [
@@ -345,9 +385,18 @@ class _CartPageState extends State<CartPage> {
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
+                                      IconButton(
+                                        onPressed: () => removeItem(item["id"]),
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
                                       Text(
                                         CurrencyService.instance
-                                            .format(item["price"]),
+                                            .format(item["price"] ?? 0),
                                         style: TextStyle(
                                           color: Colors.grey.shade600,
                                           fontSize: 13,
@@ -356,7 +405,7 @@ class _CartPageState extends State<CartPage> {
                                       const SizedBox(height: 8),
                                       Text(
                                         CurrencyService.instance.format(
-                                          item["price"] * item["qty"],
+                                          (item["price"] ?? 0) * (item["qty"] ?? 0),
                                         ),
                                         style: TextStyle(
                                           color: primaryColor,
@@ -372,10 +421,6 @@ class _CartPageState extends State<CartPage> {
                           },
                         ),
                       ),
-
-                      // =========================
-                      // BOTTOM CHECKOUT
-                      // =========================
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: const BoxDecoration(

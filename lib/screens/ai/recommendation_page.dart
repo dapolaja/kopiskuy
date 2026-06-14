@@ -55,7 +55,6 @@ class _RecommendationPageState extends State<RecommendationPage> {
               ? const Center(child: Text("Belum ada rekomendasi"))
               : Column(
                   children: [
-                    // 🤖 BANNER AI
                     Container(
                       margin: const EdgeInsets.all(15),
                       padding: const EdgeInsets.all(15),
@@ -84,7 +83,6 @@ class _RecommendationPageState extends State<RecommendationPage> {
                       ),
                     ),
 
-                    // 🧾 LIST PRODUK
                     Expanded(
                       child: GridView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -114,13 +112,12 @@ class _RecommendationPageState extends State<RecommendationPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 🖼 IMAGE
                                 ClipRRect(
                                   borderRadius: const BorderRadius.vertical(
                                     top: Radius.circular(15),
                                   ),
                                   child: Image.network(
-                                    "http://192.168.1.16:3000/uploads/${item["image"]}",
+                                    "http://192.168.100.209:3000/uploads/${item["image"]}",
                                     height: 110,
                                     width: double.infinity,
                                     fit: BoxFit.cover,
@@ -135,7 +132,6 @@ class _RecommendationPageState extends State<RecommendationPage> {
                                   ),
                                 ),
 
-                                // 📦 CONTENT
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: Column(
@@ -163,8 +159,6 @@ class _RecommendationPageState extends State<RecommendationPage> {
                                       ),
 
                                       const SizedBox(height: 4),
-
-                                      // ⭐ TAG AI
                                       Row(
                                         children: const [
                                           Icon(Icons.auto_awesome,

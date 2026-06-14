@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../core/services/api_service.dart';
 import '../core/services/currency_service.dart';
+import '../screens/home/product_detail_page.dart';
 
 class ProductCard extends StatefulWidget {
   final Product product;
@@ -58,111 +59,121 @@ class _ProductCardState extends State<ProductCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProductDetailPage(product: widget.product),
                   ),
-                  child: widget.product.image != null
-                      ? Image.network(
-                          "http://192.168.18.96:3000/uploads/${widget.product.image}",
-                          height: 140,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 140,
-                              color: accentColor,
-                              alignment: Alignment.center,
-                              child: Icon(
-                                Icons.image_not_supported_outlined,
-                                color: primaryColor,
-                                size: 40,
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          height: 140,
-                          color: accentColor,
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.local_cafe,
-                            color: primaryColor,
-                            size: 42,
+                );
+              },
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                    child: widget.product.image != null
+                        ? Image.network(
+                            "http://192.168.100.84:3000/uploads/${widget.product.image}",
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 140,
+                                color: accentColor,
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: primaryColor,
+                                  size: 40,
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            height: 140,
+                            color: accentColor,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.local_cafe,
+                              color: primaryColor,
+                              size: 42,
+                            ),
                           ),
-                        ),
-                ),
+                  ),
 
-                // =========================
-                // STOCK BADGE
-                // =========================
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      "Stock ${widget.product.stock}",
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                  // =========================
+                  // STOCK BADGE
+                  // =========================
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "Stock ${widget.product.stock}",
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                // =========================
-                // ADMIN BUTTONS
-                // =========================
-                if (role == "admin")
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Row(
-                      children: [
-                        buildAdminButton(
-                          icon: Icons.edit_outlined,
-                          color: Colors.blue,
-                          onTap: () {
-                            showEditDialog(context);
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        buildAdminButton(
-                          icon: Icons.delete_outline,
-                          color: Colors.red,
-                          onTap: () async {
-                            await ApiService().deleteProduct(
-                              widget.product.id,
-                            );
+                  // =========================
+                  // ADMIN BUTTONS
+                  // =========================
+                  if (role == "admin")
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Row(
+                        children: [
+                          buildAdminButton(
+                            icon: Icons.edit_outlined,
+                            color: Colors.blue,
+                            onTap: () {
+                              showEditDialog(context);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          buildAdminButton(
+                            icon: Icons.delete_outline,
+                            color: Colors.red,
+                            onTap: () async {
+                              await ApiService().deleteProduct(
+                                widget.product.id,
+                              );
 
-                            if (!mounted) return;
+                              if (!mounted) return;
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Produk berhasil dihapus",
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Produk berhasil dihapus",
+                                  ),
                                 ),
-                              ),
-                            );
+                              );
 
-                            setState(() {});
-                          },
-                        ),
-                      ],
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
 
             // =========================
@@ -174,27 +185,40 @@ class _ProductCardState extends State<ProductCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.product.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      CurrencyService.instance.format(
-                        widget.product.price,
-                      ),
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductDetailPage(product: widget.product),
+                          ),
+                        );
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.product.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            CurrencyService.instance.format(
+                              widget.product.price,
+                            ),
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 

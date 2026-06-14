@@ -11,9 +11,7 @@ class ConverterPage extends StatefulWidget {
 
 class _ConverterPageState extends State<ConverterPage> {
   late String selected;
-
   final Color primaryColor = const Color(0xFF6F4E37);
-
   final Color accentColor = const Color(0xFFF5F1EE);
 
   @override
@@ -23,9 +21,6 @@ class _ConverterPageState extends State<ConverterPage> {
     selected = CurrencyService.instance.selectedCurrency;
   }
 
-  // =========================
-  // CUSTOM SNACKBAR
-  // =========================
   void showCustomSnackbar({
     required String title,
     required String message,
@@ -95,10 +90,6 @@ class _ConverterPageState extends State<ConverterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: accentColor,
-
-      // =========================
-      // APPBAR
-      // =========================
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
@@ -121,10 +112,6 @@ class _ConverterPageState extends State<ConverterPage> {
           child: Column(
             children: [
               const SizedBox(height: 10),
-
-              // =========================
-              // ICON
-              // =========================
               Container(
                 width: 110,
                 height: 110,
@@ -177,10 +164,6 @@ class _ConverterPageState extends State<ConverterPage> {
               ),
 
               const SizedBox(height: 35),
-
-              // =========================
-              // MAIN CARD
-              // =========================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -210,10 +193,6 @@ class _ConverterPageState extends State<ConverterPage> {
                     ),
 
                     const SizedBox(height: 14),
-
-                    // =========================
-                    // DROPDOWN
-                    // =========================
                     DropdownButtonFormField<String>(
                       value: selected,
                       dropdownColor: Colors.white,
@@ -262,17 +241,13 @@ class _ConverterPageState extends State<ConverterPage> {
                           .toList(),
                       onChanged: (value) async {
                         if (value == null) return;
-
                         await CurrencyService.instance.changeCurrency(
                           value,
                         );
-
                         setState(() {
                           selected = value;
                         });
-
                         if (!mounted) return;
-
                         showCustomSnackbar(
                           title: "Success",
                           message: "Currency berhasil diubah ke $value",
@@ -283,10 +258,6 @@ class _ConverterPageState extends State<ConverterPage> {
                     ),
 
                     const SizedBox(height: 35),
-
-                    // =========================
-                    // PREVIEW
-                    // =========================
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(22),
@@ -335,10 +306,6 @@ class _ConverterPageState extends State<ConverterPage> {
               ),
 
               const SizedBox(height: 28),
-
-              // =========================
-              // INFO CARD
-              // =========================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
